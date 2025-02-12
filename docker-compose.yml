@@ -75,6 +75,7 @@ services:
 
     volumes:
       - wordpress:/var/www/html
+      - ./backup/:/backup/
       - ./wordpress/scripts/:/scripts/
       - ./wordpress/varilink-scripts/:/varilink-scripts/
       - ./wxr:/wxr
