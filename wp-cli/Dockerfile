@@ -23,9 +23,12 @@ RUN                                                                            \
   apt-get --no-install-recommends --yes install                                \
     ca-certificates                                                            \
     gosu                                                                       \
+    gzip                                                                       \
     jq                                                                         \
     less                                                                       \
     libpng-dev                                                                 \
+    mariadb-client                                                             \
+    tar                                                                        \
     wget                                                                       \
     zlib1g-dev                                                              && \
   docker-php-ext-install gd mysqli                                          && \

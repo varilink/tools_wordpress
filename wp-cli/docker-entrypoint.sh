@@ -20,6 +20,7 @@ function helper_menu {
     _export-post                                                               \
     _import-post                                                               \
     _install-importer                                                          \
+    _make-backup                                                               \
     _remove-contact-form-recaptcha-integration                                 \
     _restore-from-backup                                                       \
     _restore-media                                                             \
@@ -46,6 +47,7 @@ case $1 in
   _export-post |                                                               \
   _import-post |                                                               \
   _install-importer |                                                          \
+  _make-backup |                                                               \
   _remove-contact-form-recaptcha-integration |                                 \
   _restore-from-backup |                                                       \
   _restore-media |                                                             \
@@ -158,6 +160,16 @@ case $command in
     gosu www-data wp                                                           \
       --allow-root                                                             \
       plugin install wordpress-importer --activate
+
+  ;;
+
+  _make-backup)
+
+    gosu host_user rm /backup/*.gz
+    gosu host_user wp db export /backup/database.sql
+    gosu host_user gzip /backup/database.sql
+    tar -czvf /tmp/html.tar.gz /var/www/html
+    gosu host_user cp /tmp/html.tar.gz /backup/.
 
   ;;
 
