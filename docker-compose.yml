@@ -56,8 +56,8 @@ services:
       start_period: 30s
 
     environment:
-      - MYSQL_DATABASE=wordpress
-      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_DATABASE=wordpress
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes
 
   wp-cli:
 
