@@ -31,7 +31,7 @@ RUN                                                                            \
   docker-php-ext-install gd mysqli                                          && \
   mkdir -p /var/www/.wp-cli                                                 && \
   chown www-data:www-data /var/www/.wp-cli                                  && \
-  useradd --create-home --uid ${UID} wxr                                    && \
+  useradd --create-home --uid ${UID} host_user                              && \
   wget --output-document=/usr/local/bin/wp ${PHAR}                          && \
   chmod +x /usr/local/bin/wp
 

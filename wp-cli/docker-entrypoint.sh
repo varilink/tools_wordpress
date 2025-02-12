@@ -117,10 +117,10 @@ case $command in
     read -p 'Post name: ' post_name
 
     # NOTE: The post list requires that the post is published
-    gosu wxr wp export                                                         \
+    gosu host_user wp export                                                   \
       --path=/var/www/html/                                                    \
       --post__in="$(                                                           \
-          gosu wxr wp post list                                                \
+          gosu host_user wp post list                                          \
             --path=/var/www/html/                                              \
             --name=$post_name                                                  \
             --format=ids                                                       \
