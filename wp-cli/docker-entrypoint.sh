@@ -26,6 +26,7 @@ function helper_menu {
     _restore-media                                                             \
     _restore-plugin                                                            \
     _restore-theme                                                             \
+    _script                                                                    \
     _exit
   do
     if [[ -n $helper ]]
@@ -361,12 +362,28 @@ case $command in
 
   _script)
 
-    if [ -f "/scripts/$2.sh" ]; then
-      gosu www-data bash "/scripts/$2.sh"
-    elif [ -f "/varilink-scripts/$2.sh" ]; then
-      gosu www-data bash "/varilink-scripts/$2.sh"
+    if [ -n "$2" ]; then
+
+      # A second command line argument has been provided, which we assume is the
+      # script that we are to run.
+      script="$2"
+
     else
-      echo 'The script does NOT exist'
+
+      # No second command line argument has been provided, so we must prompt the
+      # user to provide the name of the script that we are to run.
+      read -p                                                                  \
+        'Enter the file name (without any suffix) of the script to run: '      \
+        script
+
+    fi
+
+    if [ -f "/scripts/$script.sh" ]; then
+      gosu www-data bash "/scripts/$script.sh"
+    elif [ -f "/varilink-scripts/$script.sh" ]; then
+      gosu www-data bash "/varilink-scripts/$script.sh"
+    else
+      echo "The script '$script' does NOT exist"
     fi
 
   ;;
