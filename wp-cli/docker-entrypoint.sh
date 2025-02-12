@@ -159,7 +159,6 @@ case $command in
   _install-importer)
 
     gosu www-data wp                                                           \
-      --allow-root                                                             \
       plugin install wordpress-importer --activate
 
   ;;
