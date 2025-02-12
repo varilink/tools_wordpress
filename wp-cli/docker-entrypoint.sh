@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 
 # Wrapper script to WP-CLI that provides several shortcut "helper scripts" as
-# well as the native fuctionality of WP-CLI itself.
+# well as the native functionality of WP-CLI itself.
 
 # ------
 
