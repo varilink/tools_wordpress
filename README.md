@@ -211,7 +211,7 @@ When this helper is run you need to supply the name of the script to run. This s
 
 So:
 ```sh
-docker-compose run --rm _script SCRIPT_NAME
+docker-compose run wp-cli --rm _script SCRIPT_NAME
 ```
 Will look for a file *SCRIPT_NAME*.sh, first in `wordpress/scripts` and then, if it doesn't find it there, in `wordpress/varilink-scripts` and will execute it.
 
