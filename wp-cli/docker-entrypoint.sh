@@ -238,7 +238,7 @@ case $command in
 
     if [[ ! -e /var/www/html/wp-content/uploads ]]
       then
-        mkdir -p /var/www/html/wp-content/uploads
+        gosu www-data mkdir -p /var/www/html/wp-content/uploads
     fi
 
     gosu www-data tar                                                          \
