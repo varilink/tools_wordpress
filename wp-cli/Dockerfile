@@ -22,16 +22,23 @@ RUN                                                                            \
   apt-get update                                                            && \
   apt-get --no-install-recommends --yes install                                \
     ca-certificates                                                            \
+    ghostscript                                                                \
     gosu                                                                       \
     gzip                                                                       \
     jq                                                                         \
     less                                                                       \
+    libmagickwand-dev                                                          \
     libpng-dev                                                                 \
     mariadb-client                                                             \
     tar                                                                        \
     wget                                                                       \
     zlib1g-dev                                                              && \
   docker-php-ext-install gd mysqli                                          && \
+  pecl install imagick                                                      && \
+  docker-php-ext-enable imagick                                             && \
+  sed -i 's/\
+^\(  <policy domain="coder" rights="\)none\(" pattern="PDF" \/>\)$/\
+\1read|write\2/' /etc/ImageMagick-6/policy.xml                              && \
   mkdir -p /var/www/.wp-cli                                                 && \
   chown www-data:www-data /var/www/.wp-cli                                  && \
   useradd --create-home --uid ${UID} host_user                              && \
