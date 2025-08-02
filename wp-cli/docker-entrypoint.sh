@@ -441,7 +441,11 @@ case $command in
     # directly through to the WP-CLI command. This gives direct access to the
     # native WP-CLI functionality, bypassing the helpers above.
 
-    gosu www-data wp "$@"
+    if [ "$1" == "export" ]; then
+      gosu posts wp "$@"
+    else
+      gosu www-data wp "$@"
+    fi
 
   ;;
 
