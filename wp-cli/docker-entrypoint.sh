@@ -19,6 +19,7 @@ function helper_menu {
     _create-admin-user                                                         \
     _export-post                                                               \
     _import-post                                                               \
+    _import-theme                                                              \
     _install-importer                                                          \
     _make-backup                                                               \
     _remove-contact-form-recaptcha-integration                                 \
@@ -47,6 +48,7 @@ case $1 in
   _create-admin-user |                                                         \
   _export-post |                                                               \
   _import-post |                                                               \
+  _import_theme |                                                              \
   _install-importer |                                                          \
   _make-backup |                                                               \
   _remove-contact-form-recaptcha-integration |                                 \
@@ -153,6 +155,44 @@ case $command in
       break
 
     done
+
+  ;;
+
+  _import-theme)
+
+    zip=$(find /theme-export -name "*.zip")
+    echo "Zip file found at $zip"
+
+    cp $zip /tmp/.
+    theme=$( gosu www-data wp theme list --field=name --status=active )
+    unzip "/tmp/$(basename "$zip")" -d "/tmp/$theme"
+
+    gosu host_user                                                             \
+      cp /tmp/$theme/theme.json /var/www/html/wp-content/themes/$theme/.
+
+#    read -r -d '' php <<'EOF'
+#$theme = wp_get_theme();
+#$theme_slug = $theme->get_stylesheet();
+#$exported = get_block_theme_folders( $theme_slug );
+#var_dump( $exported );
+#EOF
+
+#    gosu www-data wp eval "$php"
+
+#    theme=$(                                                                   \
+#        gosu www-data wp theme list --field=name --status=active
+#    )
+
+#    post_id=$(                                                                 \
+#        gosu www-data wp post list --format=ids --post_type=wp_global_styles   \
+#    )
+
+#    post_content=$(                                                            \
+#        gosu www-data wp post get $post_id --field=post_content                \
+#    )
+
+#    gosu host_user echo $post_content                                          \
+#        > "/var/www/html/wp-content/themes/$theme/theme.json"
 
   ;;
 

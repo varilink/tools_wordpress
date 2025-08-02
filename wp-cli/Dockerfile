@@ -31,6 +31,7 @@ RUN                                                                            \
     libpng-dev                                                                 \
     mariadb-client                                                             \
     tar                                                                        \
+    unzip                                                                      \
     wget                                                                       \
     zlib1g-dev                                                              && \
   docker-php-ext-install gd mysqli                                          && \
