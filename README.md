@@ -1,10 +1,21 @@
+Items to add to this read me:
+
+- The pma service
+- The new _make-backup helper
+- The change to the _script helper whereby you can specify the script to run up front
+- The distinction between scripts invoked via the _script helper and scripts that are part of the wrapper to other helpers
+- If you restore from database using `--env-file backup.env` and you subsequently stop the *db* container then when you restart it you must use `--env-file backup.env` even if you don't won't to restore again because otherwise the container will be recreated.
+
+
+
+
 # Tools - WordPress
 
 David Williamson @ Varilink Computing Ltd
 
 ------
 
-This repository provides tooling for the development and testing of WordPress sites. It does this by defining Docker Compose services that run any WordPress based website on the desktop, along with integration with the WP-CLI command-line interface for WordPress that is also supplemented with various helper functions.
+This repository defines Docker Compose services that run any WordPress based website on the desktop along with a phpMyAdmin service, for convenient inspection of the WordPress database, and integration with the [WP-CLI](https://wp-cli.org/) command-line interface for WordPress, which this repository also supplements with various helper functions.
 
 ## Contents
 
@@ -13,106 +24,128 @@ This repository provides tooling for the development and testing of WordPress si
 | `docker-compose.yml` | Docker Compose project configuration.                  |
 | `wp-cli/`            | Artefacts used by the `wp-cli` Docker Compose service. |
 
-## Usage
-
-### Installing this tool within a WordPress site project
+## Installation
 
 1. Add this repository as a submodule of a project that uses it. This must be at the path `tools/wordpress/` relative to the root folder of that master project.
 
 2. Set the following Docker Compose environment variables in the project:
+   - COMPOSE_FILE (see below)
    - COMPOSE_PROJECT_NAME
-   - WORDPRESS_TAG
+   - DOMAIN
    - MARIADB_TAG
+   - PHP_TAG
+   - PROXY_PORT
+   - WORDPRESS_TAG
 
-3. Add any additional Docker Compose files to your project that you require in order to extend the services defined in this repository; for example in order to pass through project specific environment variables.
+3. Add any master Docker Compose file to your project, which you may use in order to extend the services defined in this repository; for example in order to pass through project specific environment variables, but which must be present in any case.
 
-4. Be sure to apply all the required Docker Compose files in the right order, which can be done using the COMPOSE_FILE environment variable for convenience. Note that you must include a Docker Compose file in the project's root folder **first** in the `COMPOSE_FILE` variable since this then sets the root folder for any relative paths in all the subsequent Docker Compose files - see [this issue on GitHub](https://github.com/docker/compose/issues/3874), which identifies the workaround of using an empty Docker Compose file in the project's root folder where there isn't already one in there that can be referenced first.
+4. Apply all the required Docker Compose files for your project in the right order using the COMPOSE_FILE environment variable for convenience. Note that you must include the master Docker Compose file in the project's root folder **first** in the `COMPOSE_FILE` variable, since this then sets the root folder for any relative paths in all the subsequent Docker Compose files - see [this issue on GitHub](https://github.com/docker/compose/issues/3874), which identifies the workaround of using an empty Docker Compose file in the project's root folder where there isn't already one in there that can be referenced first.
 
-5. To make the project's WordPress website available in the web browser on the desktop, also add the Varilink Computing Ltd [tools-proxy](https://github.com/varilink/tools-proxy) repository as a submodule of the master project. Usage help for that tool can be found in [tools-proxy/README.md](https://github.com/varilink/tools-proxy/blob/main/README.md).
+5. To make the project's WordPress website available in the web browser on the desktop, also add the Varilink Computing Ltd [tools_proxy](https://github.com/varilink/tools_proxy) repository as a submodule of the master project. Usage help for that tool can be found in [tools_proxy/README.md](https://github.com/varilink/tools_proxy/blob/main/README.md).
 
-Good examples of this tool being used in projects can be found in my [FoBV - Docker](https://github.com/varilink/fobv-docker) and [Website - Docker](https://github.com/varilink/website-docker) repositories.
+Examples of this tool being used in projects can be found in the Docker repositories associated with my WordPress projects here:
+- [FoBV - Docker](https://github.com/varilink/fobv_docker)
+- [New Opera Company - Docker](https://github.com/varilink/newopera_docker)
+- [Website - Docker](https://github.com/varilink/website_docker)
+
+## Usage
 
 ### Starting a project from scratch
 
-When starting work on a project for the first time, with no existing project containers or volumes in place, simply bring the project's `wordpress` service up via `docker-compose up wordpress`. You will then be able to run the WordPress installation script for your development website at `http://${COMPOSE_PROJECT_NAME}` in a web browser on your desktop, provided you have the right proxy port mapping in place - see [tools-proxy/README.md](https://github.com/varilink/tools-proxy/blob/main/README.md).
-
-In this mode it's probable that you won't need to provide any project overrides for the Docker Compose services provided by this tool. As noted above however, the Docker Compose file listed first in the `COMPOSE_FILE` must be a project file in the project's root folder. As highlighted in the GitHub issue referenced above, this can be achieved using a Docker Compose file that is empty, save for the Docker Compose file version number; for example:
-
-```yaml
-version: '3.9'
-```
-
-The `docker-compose.yml` files that come with Docker Compose based Varilink Computing Ltd tools, including this one, do **not** specify a version number. If you do configure any service overrides in the project's master Docker Compose file, then the version can be omitted from that file also. Docker seems to infer the version from the syntax of the service definitions.
-
-The WordPress installation folder is stored in a volume named *wordpress*, which will be created with the name `${COMPOSE_PROJECT_NAME}_wordpress`. This is because it is shared by both the wordpress and wp-cli Docker Compose services. Be alert that this means it must be explicitly removed if that's required. It can't be cleared by simply removing a container.
-
-### Restoring a project from backup
-
-You can restore a WordPress website from backup to work on updates to it locally. There are two aspects to this, the database and the WordPress files.
-
-To enable this you must map directories that hold the backup files to the correct paths within the containers for the *db* and/or the *wp-cli* Docker Compose services. You can do this via the `--volume` option of the `docker-compose` command, as a one-off, or extend the *db* and/or *wp-cli* services defined in this tool's `docker-compose.yml` file in your project's own `docker-compose.yml` file. I would recommend the latter approach as the continuation of the volume mappings being in place after you've used them to restore from causes no issues.
-
-The details of how this works for each of the *db* and *wp-cli* services are as follows:
-
-- For the *db* service, a volume that maps a directory containing a database dump file to restore from must be mapped to the directory `/docker-entrypoint-initdb.d` in the container. That directory is as expected by mariadb official image hosted by Docker Hub - see under "Initializing the database contents" on [Docker Hub's mariadb image page](https://hub.docker.com/_/mariadb).
-
-  As per the documentation on that page, the mariadb image "will execute files with extensions `.sh`, `.sql`, `.sql.gz`, `.sql.xz` and `.sql.zst` that are found in `/docker-entrypoint-initdb.d`. Once the backup has been used to restore from it will be ignored when you subsequently bring the *db* service up again until such time as you remove the container.
-
-- For the *wp-cli* service, a volume that maps a folder containing a compressed, tar archive (extension `.tar.gz`) of the website's WordPress installation folder must be mapped to the `/backup/` directory within the container. Unlike the *db* service, this does **not** trigger a restore when a container first starts, rather it merely makes that archive available to the *wp-cli* helpers that use it - see under [The wp-cli service and its built-in helpers](#the-wp-cli-service-and-its-built-in-helpers) below.
-
-You could map different project directories to the two services as described above, you could provide a backup file to only one of those services or you could provide backup files that don't correspond to the same point in time; however, the most common and sensible use case is a single project directory containing database and WordPress file backups that correspond to the same point in time and restoring from both.
-
-In that scenario, the process to retore a website on the desktop from a backup (database and WordPress file) taken of that same website on a host is as follows:
-
-1. Make sure that the project's containers are stopped and removed:
-
-```sh
-docker-compose stop && docker-compose rm
-```
-
-2. Remove the volume that holds the project's WordPress files
-
-```sh
-docker volume rm varilink_wordpress
-```
-
-3. Bring up the *wordpress* service:
+When starting work on a project for the first time, with no existing project containers or volumes in place, simply bring the project's `wordpress` service:
 
 ```sh
 docker-compose up wordpress
 ```
 
-This will also bring up the *db* and *proxy* services as they are configured as dependencies for the *wordpress* service in this repository's `docker-compose.yml` file. The dependency on the *db* service in particular is configured with a health check that causes the *wordpress* service to wait until the *db* service becomes available before it, itself, comes up. When restoring the database from a backup, this can take a little while.
+Note that whenever you bring up the *wordpress* service, the *db* and *proxy* services are automatically started as dependencies. The dependency on the *db* service is configured with a health check that the *db* service is available for connections before the *wordpress* service is brought up. In some circumstances this may take a little time but if wait a while it should happen eventually.
 
-After you have restored from a backup the website will not be immediately accessible locally. To make it so, a number of the helpers provide by the *wp-cli* service must be run - see [The wp-cli service and its built-in helpers](#the-wp-cli-service-and-its-built-in-helpers) for guidance on running these helpers.
+When the *wordpress* service has come up, you will then be able to run the WordPress installation script for your development website at `http://${COMPOSE_PROJECT_NAME}` in a web browser on your desktop, provided you have the right proxy port mapping in place - see [tools_proxy/README.md](https://github.com/varilink/tools_proxy/blob/main/README.md).
 
-Always correct the site's URL for local use:
+In this mode it's probable that you won't need to provide any project overrides for the Docker Compose services provided by this tool. As noted above however, the Docker Compose file listed first in the `COMPOSE_FILE` must be a project file in the project's root folder. As highlighted in the GitHub issue referenced above, this can be achieved using a Docker Compose file that is empty; however you must include at least one service identifier in this Docker Compose file even if you don't need to provide any project overrides, otherwise Docker will assign is version 1 of the Docker Compose file specification.
+
+For example:
+
+```yaml
+services:
+
+  wordpress:
+
+```
+
+The `docker-compose.yml` files that come with Docker Compose based Varilink Computing Ltd tools, including this one, do **not** specify a Docker Compose file version number. If you similarly do not specify a version number in any of your project specific Docker Compose files, then Docker seems to infer the version from the syntax of the service definitions.
+
+The WordPress installation folder is stored in a volume named *wordpress*, which will be created with the name `${COMPOSE_PROJECT_NAME}_wordpress`. This is because it is shared by both the wordpress and wp-cli Docker Compose services. Be alert that this means it must be explicitly removed if that's required. It can't be cleared by simply removing the containers that use it.
+
+### Testing a WordPress Project's Theme and Plugins
+
+*This section will describe the typical development use of this tool, in which a project's theme and plugins are mapped as Docker volumes into the running WordPress container. It will also reference the template Git Docker Compose repository for WordPress projects, which has yet to be created.*
+
+### Restoring a project from backup
+
+You can restore a WordPress website from backup to work on updates to it locally. There are two aspects to this, the database and the WordPress files, which my development lifecycle assumes will be stored as `database.sql.gz` and `html.tar.gz` respectively. The files that you intend to use to restore from for both aspects must be contained with the directory `backup/`  within your WordPress project's Docker Compose repository.
+
+To facilitate this, I recommend having a separate Docker Compose setup within your project. I use two pairs of Docker Compose configuration files, each pair consisting of a Docker Compose file environment file and a Docker Compose services file.
+
+For example:
+
+- `.env` and `docker-compose.yml` for normal running
+
+- `backup.env` and `backup.yml` for when I wish to restore from a backup
+
+Typically, the differences between these setups is as follows:
+
+- The `.env` and `backup.env` files may specify different values for `MARIADB_TAG`, `PHP_TAG` and `WORDPRESS_TAG` if there are differences in the versions of MariaDB, PHP and WordPress used by your website under development and the backup you're restoring from.
+
+- The `backup.env` file will **not** concatenate Docker Compose files in the value of the `COMPOSE_FILE` environment variable other than those for the Varilink [Tools - Proxy](git@github.com:varilink/tools_proxy.git) and [Tools - WordPress](git@github.com:varilink/tools_wordpress.git) since other tools that are part of the development lifecycle are not relevant if you're simply restoring from backup.
+
+- The `backup.yml` file defines `./backup/database.sql.gz` as a volume mapped to `/docker-entrypoint-initdb.d/database.sql.gz` within the *db* service.
+
+- In contrast to the `docker-compose.yml` file, the `backup.yml` file will **not** define volumes for the project's theme or plugins, since again this is not relevant if you're simply restoring from backup.
+
+The process for restoring from a backup is as follows:
+
+1. Clear down the project's Docker Compose environment:
+
+```sh
+docker-compose stop
+docker-compose rm
+docker volume rm PROJECT_wordpress
+```
+
+where `PROJECT` is the value set by the `COMPOSE_PROJECT_NAME` environment variable.
+
+2. Bring up *db* service, using the Docker Compose configuration specific to restoring from backup:
+
+```sh
+docker-compose --env-file backup.env up db
+```
+
+If you read the section *Initializing the database contents* in [Docker Hub's mariadb image page](https://hub.docker.com/_/mariadb), then you will see that this will result in the database being populated from `database.sql.gz`.
+
+3. While the *db* service is still up, run the [_restore-from-backup](#_restore-from-backup) helper that is built into the *wp-cli* service:
+
+```sh
+docker-compose --env-file backup.env run --rm wp-cli _restore_from_backup
+```
+
+4. Bring up the *wordpress* service using the same environment for restoring from backup:
+
+```sh
+docker-compose --env-file backup.env up wordpress
+```
+
+The next step is optional depending on the source of your backup. Backups come from one of two sources:
+
+  - A host (not a Docker container) that an instance of the project's WordPress site is deployed to. These backups are created by the using the Varilink tools implemented by [Tools - WordPress Restore](https://github.com/varilink/tools_wordpress-restore) and [Tools - WordPress Make Backup](https://github.com/varilink/tools_wordpress-make-backup) in combination.
+
+  - A backup made from an instance of the WordPress site running within a container on the desktop using this tool. The *wp-cli* service's [_make-backup](#_make-backup) helper can be used to create these backups. This can be useful to conveniently persist work done of a version of the WordPress site on the desktop outside of the Docker containers and volumes and in a form that can be readily restored from.
+
+If the source is the first of these then before you can access the restored WordPress site on the desktop you must change the site's URL to that used on the desktop. You can do this using the *wp-cli* service's [_correct-site-url](#_correct-site-url) helper:
+
 ```sh
 docker-compose run --rm wp-cli _correct-site-url
 ```
-
-In order to access the admin dashboard locally using convenient, known user credentials:
-```sh
-docker-compose run --rm wp-cli _create-admin-user
-```
-
-If the theme that you're working on locally is not the same theme that is active for the website that the backup was taken from, then you must activate that local theme; for example:
-```sh
-docker-compose run --rm wp-cli theme activate varilink-site
-```
-
-Of course, substitute `varilink-site` with the correct theme name for your usage.
-
-If the theme uses theme images then these must be restored from the filesystem backup:
-```sh
-docker-compose run --rm wp-cli _restore-media
-```
-
-If you want to restore the files for any plugins from the WordPress files backup, then you must do so for each such plugin:
-```sh
-docker-compose run --rm wp-cli _restore_plugin
-```
-And select the required plugin when prompted to do so.
 
 ### The wp-cli service and its built-in helpers
 
@@ -176,6 +209,8 @@ Note that a precursor to running this helper is that the `wordpress-importer` pl
 #### _install-importer
 
 This is a very simple helper that wraps the WP CLI tool's `plugin install` command to specifically install the `wordpress-importer` plugin.
+
+#### _make-backup
 
 #### _remove-contact-form-recaptcha-integration
 
