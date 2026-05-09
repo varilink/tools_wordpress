@@ -242,7 +242,7 @@ case $command in
     # won't because of file permissions on the live server. Look to see if this
     # archive contains the wp-config.php file. Using `grep` rather than a tar
     # wildcard pattern avoids a bash failure status that halts execution.
-    if [ $(tar --list --file=$archive | grep -F 'wp-config.php') ]
+    if tar --list --file="$archive" | grep -qF 'wp-config.php'
       then
 
         wp_config=$(tar --list --file=$archive --wildcards "*/wp-config.php")
